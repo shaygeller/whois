@@ -12,14 +12,17 @@ stats = {key:0 for key in stats_elements}
 #     stats[s] = 0;
 
 # Iterate over the whois data json, and locate the whois_wanted_elements for each url in the whois data json.
-with open('D:\Users\gelleral\Dropbox\Deutsche Telekom\\text.txt', 'r+') as f, \
-    open('D:\Users\gelleral\Dropbox\Deutsche Telekom\my_csv.txt', "ab") as csv_file:
+
+input_file_name = 'D:\Users\gelleral\Dropbox\Deutsche Telekom\\text.txt'
+output_file_name = 'D:\Users\gelleral\Dropbox\Deutsche Telekom\url_to_whois.csv'
+with open(input_file_name, 'r+') as urls_file, \
+    open(output_file_name, "ab") as csv_file:
     # Add schema to csv
     first_schema_line = ["URL"] + whois_wanted_elements
     writer = csv.writer(csv_file, delimiter=',')
     writer.writerow(first_schema_line)
 
-    for line in f:
+    for line in urls_file:
         # transform a line into a python dict
         dict_as_json = json.loads(line)
         url_dict = dict(dict_as_json)
