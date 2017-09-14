@@ -5,18 +5,14 @@ from dateutil.parser import parse
 # Put here the wanted element names from the whois data.
 # You can see the RAW WHOIS DATA section in this site for example: https://www.whois.com/whois/www.rphilsdanceteam.com.
 # Notice! not all RAW WHOIS DATA are the same, but most of them does.
-whois_wanted_elements = ["Updated Date", "Creation Date","Admin City", "Admin Country","Name Server", "Registrant Name","Registrant","Registrant Country","Registrant City"]
+whois_wanted_elements = ["Update Date", "Creation Date","Admin City", "Admin Country","Name Server", "Registrant Name","Registrant","Registrant Country","Registrant City"]
 whois_wanted_elements = sorted(whois_wanted_elements)
 stats_elements = ["Total number of urls", "Has whois data"] + whois_wanted_elements
 stats = {key:0 for key in stats_elements}
-# stats = dict.fromkeys(whois_wanted_elements)
-# for s in stats:
-#     stats[s] = 0;
-
 # Iterate over the whois data json, and locate the whois_wanted_elements for each url in the whois data json.
 
-input_file_name = 'D:\Users\gelleral\Dropbox\Deutsche Telekom\\plain_urls_ans.txt'
-output_file_name = 'D:\Users\gelleral\Dropbox\Deutsche Telekom\\plain_urls_ans_parsed.csv'
+input_file_name = 'D:\Users\gelleral\Dropbox\Deutsche Telekom\\2017_09_12_plain_urls_ans.txt'
+output_file_name = input_file_name[:-4] + "_parsed.csv"
 with open(input_file_name, 'r+') as urls_file, \
     open(output_file_name, "ab") as csv_file:
     # Add schema to csv
@@ -39,13 +35,16 @@ with open(input_file_name, 'r+') as urls_file, \
             csv_line.append(url)
             has_whois_data = False
             for element in whois_wanted_elements:
-                if element in url_dict[url].iterkeys():
+                print "ELEMENT is "  +element
+                if element in url_dict[url].keys():
                     has_whois_data = True
                     elem = url_dict[url][element].strip()
                     print "elem " + elem
                     print "url " + url
+                    print "ELEMENT : "+ element + " for the url " + url
                     if elem is not "" and element in ["Creation Date","Updated Date"]:
                         if len(elem) < 2:
+                            # element is too short
                             elem = ""
                             print "TOO SHORT ################################################################################"
                         elif " " in elem and len(elem) > 2:
@@ -62,11 +61,9 @@ with open(input_file_name, 'r+') as urls_file, \
                             #
                             elif len(elem_temp) ==8:
                                 elem_temp = elem_temp[0:4] + "/" + elem_temp[4:6] + "/" + elem_temp[6:]
-
-
                             # elif len(elem_temp) is 10:
                             #     elem_temp = elem_temp
-                            elif "+" in elem_temp :
+                            elif "+" in elem_temp:
                                 elem_temp = elem_list[0]
                             elif len(elem_temp) is 13:
                                 elem_temp = elem_temp[:10]
@@ -81,7 +78,7 @@ with open(input_file_name, 'r+') as urls_file, \
                                     print "replaced element is " + elem_temp
                                 print "elem_temp " + elem_temp
                             else:
-                                elem_temp = elem_list[0]+ " " +elem_list[1] +" "+ elem_list[2]
+                                elem_temp = elem_list[0] + " " +elem_list[1] +" "+ elem_list[2]
                                 print "else case " + elem_temp
                             elem = elem_temp
                             print "Final elem " + elem
@@ -105,42 +102,6 @@ with open(input_file_name, 'r+') as urls_file, \
                                     elem = ""
 
                             print "Date is " + elem
-
-                        elif len(elem_temp) == 8:
-                            elem_temp = elem_temp[0:4] + "/" + elem_temp[4:6] + "/" + elem_temp[6:]
-                            try:
-                                elem = parse(elem_temp)
-                            except Exception:
-                                print "Cant parse " + elem
-                            finally:
-                                if len(str(elem)) < 1:
-                                    elem = ""
-                            try:
-                                elem = elem.strftime('%d/%m/%Y')
-                            except Exception:
-                                print "Cant Eval " + elem
-                            finally:
-                                if len(elem) < 1:
-                                    elem = ""
-
-                        elif str(elem_temp).count("-") == 2 or str(elem_temp).count("/") == 2 or str(elem_temp).count(
-                                ".") == 2:
-                            elem_temp = elem_temp
-                            try:
-                                elem = parse(elem_temp)
-                            except Exception:
-                                print "Cant parse " + elem
-                            finally:
-                                if len(str(elem)) < 1:
-                                    elem = ""
-
-                            try:
-                                elem = elem.strftime('%d/%m/%Y')
-                            except Exception:
-                                print "Cant Eval " + elem
-                            finally:
-                                if len(elem) < 1:
-                                    elem = ""
 
                     stats[element] += 1
                     csv_line.append(elem)
