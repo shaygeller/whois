@@ -1,17 +1,20 @@
 import socket
+from random import randint
 
-import errno
 import googlemaps
-from datetime import datetime
+import time
 
 import re
 
+
 def hasNumber(inputString):
-     return bool(re.search(r'\d', inputString))
+    return bool(re.search(r'\d', inputString))
 
 
 def getNumber(inputString):
     return re.search(r'\d', inputString).start()
+
+
 def get_city_country_using_googlemapsapi(location):
     """
      Get city and country from location address using google api
@@ -34,7 +37,7 @@ def get_city_country_using_googlemapsapi(location):
     country = ""
     counter = 0
     if len(result) < country_num:
-        return ["Couldn't find city","Couldn't find country"]
+        return ["Couldn't find city", "Couldn't find country"]
     for x in result[0]["address_components"]:
         counter = counter + 1
         if counter == city_num:
@@ -46,6 +49,11 @@ def get_city_country_using_googlemapsapi(location):
 
 
 def get_whois_server_list(file_name):
+    """
+    Get whois servers from a file
+    :param file_name: whois servers file
+    :return: dict of tld :whois_server data
+    """
     whois_servers = {}
     with open(file_name) as f:
         for line in f:
@@ -55,13 +63,29 @@ def get_whois_server_list(file_name):
 
 
 # Perform a generic whois query to a server and get the reply
-def perform_whois(server, query):
+def perform_whois(server, query,requests_counter):
+    """
+     Perform a generic whois query to a server and get the reply
+
+    :param server: name of the whois server
+    :param query: name of the url to query
+    :param requests_counter: counter of retries in case of an error
+    :return: response from the whois server or "Finish loop of requests without response" which indicates a loop that
+     ended without a good response
+    """
     s = None
+    msg = ""
+    retries_num = 3
+    if requests_counter == retries_num:
+        print "Stop sending requests for " + query + " after " + str(requests_counter) + " attempts"
+        msg = "Finish loop of requests without response"
+        return msg
     try:
         # socket connection
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(30)
-        # s.bind(('', 0))
+        # s.getaddrinfo('127.0.0.1', 80)
+        s.bind(('', 0))
         # addr,port = s.getsockname()
         # print str(port) +"\n"
         s.connect((server, 43))
@@ -71,78 +95,53 @@ def perform_whois(server, query):
 
         # receive reply
         # return s.recv()
-        msg = ''
         while len(msg) < 10000:
             chunk = s.recv(100)
             if chunk == '':
                 break
-            msg = msg +chunk
-
+            msg = msg + chunk
+        s.close()
         return msg
     except Exception as e:
-        print "Error: some socket problem, need to rerun the whois lookup"
+        # TODO: get all the tld with errors and fix them, 
+        # TODO: get all the tld with errors and fix them,
+        # TODO: create a test suit for thies problems
+        print "Error: some socket problem, need to rerun the whois lookup, problem url is: " + query + " whois server is " + server
         print e
     finally:
         if s is not None:
             s.close()
+        time.sleep(randint(1, 3))
+    return perform_whois(server, query,requests_counter+1)
 
-    perform_whois(server, query)
-
-# End
 
 # Function to perform the whois on a domain name
 def get_whois_data(domain, whois_servers):
+    """
+        Function to perform the whois on a domain name
+    :param domain: domain name to query
+    :param whois_servers: dict of all the whois server (tld:whois_server records)
+    :return: The response from the whois server, or empty if no response or not a valid url
+    """
     # remove http and www
     domain = domain.replace('http://', '')
     domain = domain.replace('www.', '')
 
     # get the extension , .com , .org , .edu
-    ext = domain[-3:]
-
-    # If top level domain .com .org .net
-    if (ext == 'com' or ext == 'org' or ext == 'net'):
-        # whois = 'whois.internic.net'
-        if ext in whois_servers:
-            whois = whois_servers[ext]
+    if "." in domain:
+        tld = get_tld(domain)
+        print "Domin is: " + domain + ",    Tld is " + tld
+        # if "." not in tld: #means TLD like com,net,org
+        if tld in whois_servers:
+            whois = whois_servers[tld]
         else:
             whois = 'whois.internic.net'
-        msg = perform_whois(whois, domain)
+        if "tr" is tld: # .tr tld doesnt work with whois requests TODO: check why tr tld not working with whois requests
+            return "";
 
-        # Now scan the reply for the whois server
-        lines = msg.splitlines()
-        for line in lines:
-            if ':' in line:
-                words = line.split(':')
-                if 'Whois' in words[0] and 'whois.' in words[1]:
-                    whois = words[1].strip()
-                    break;
-
-    # Or Country level - contact whois.iana.org to find the whois server of a particular TLD
-    else:
-        # Break again like , co.uk to uk
-        ext = domain.split('.')[-1]
-
-        # This will tell the whois server for the particular country
-        # whois = 'whois.iana.org'
-        if ext in whois_servers:
-            whois = whois_servers[ext]
-        else:
-            whois = 'whois.internic.net'
-        msg = perform_whois(whois, ext)
-
-        # Now search the reply for a whois server
-        lines = msg.splitlines()
-        for line in lines:
-            if ':' in line:
-                words = line.split(':')
-                if 'whois.' in words[1] and 'Whois Server (port 43)' in words[0]:
-                    whois = words[1].strip()
-                    break;
-
-    # Now contact the final whois server
-    msg = perform_whois(whois, domain)
-
-    # Return the reply
+        msg = perform_whois(whois, domain,0)
+    else:  # no TLD in the url, not a valid url
+        msg = ""  # Return the reply
     return msg
 
 
@@ -154,7 +153,7 @@ def get_tld(url):
     """
     if (url.endswith(".")):
         url = url[:-1]
-    return url[str(url).rfind("."):]
+    return url[str(url).rfind(".")+1:]
 
 
 #
