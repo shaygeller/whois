@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s', )
 
 # Global variables
+# whois_servers_file_name = "data\whois servers list.txt"
 whois_servers_file_name = "data/whois_servers_list.txt"
 whois_servers = get_whois_server_list(whois_servers_file_name)
 
@@ -97,11 +98,18 @@ if __name__ == '__main__':
     # TODO: wrap the do_parse func to insert the retries_num as a parameter in that function
     retries_num = 3
     start_time = time.time()
-    input_file_name = "data\\" + "1k_urls.txt"
-    output_file_name = "results\\" + time.strftime(
+    # input_file_name = "data\\" + "1k_urls.txt"
+    input_file_name = "data/" + "1k_urls.txt"
+    # output_file_name = "results\\" + time.strftime(
+    #     "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
+    #     mul_of_processors) + '_plain_urls_ans.txt'
+    output_file_name = "results/" + time.strftime(
         "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
         mul_of_processors) + '_plain_urls_ans.txt'
-    empty_results_file_name = "results\\" + time.strftime(
+    # empty_results_file_name = "results\\" + time.strftime(
+    #     "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
+    #     mul_of_processors) + "_empty_results.txt"
+    empty_results_file_name = "results/" + time.strftime(
         "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
         mul_of_processors) + "_empty_results.txt"
 
