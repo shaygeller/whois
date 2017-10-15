@@ -126,6 +126,7 @@ if __name__ == '__main__':
                     empty_f.write(str(result[0]) + "\n")
                     # empty_f.flush()
                 json.dump(url_to_whois, outf)
+
                 outf.write('\n')
             except Exception as e:
                 print "Error in " + result[0]
