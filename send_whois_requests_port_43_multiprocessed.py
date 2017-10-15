@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s', )
 
 # Global variables
-whois_servers_file_name = "data\whois_servers_list.txt"
+whois_servers_file_name = "data/whois_servers_list.txt"
 whois_servers = get_whois_server_list(whois_servers_file_name)
 
 # tld_parse_functions = {".kr": parse_whois_response_kr,
