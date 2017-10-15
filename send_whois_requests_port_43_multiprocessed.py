@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s', )
 
 # Global variables
-whois_servers_file_name = "data\whois servers list.txt"
+whois_servers_file_name = "data\whois_servers_list.txt"
 whois_servers = get_whois_server_list(whois_servers_file_name)
 
 # tld_parse_functions = {".kr": parse_whois_response_kr,
@@ -94,6 +94,7 @@ if __name__ == '__main__':
     multiprocessing.freeze_support()
     chunk_size = 2
     mul_of_processors = 2
+    # TODO: wrap the do_parse func to insert the retries_num as a parameter in that function
     retries_num = 3
     start_time = time.time()
     input_file_name = "data\\" + "1k_urls.txt"
@@ -103,6 +104,7 @@ if __name__ == '__main__':
     empty_results_file_name = "results\\" + time.strftime(
         "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
         mul_of_processors) + "_empty_results.txt"
+
     with open(input_file_name, 'r') as inf, open(output_file_name, 'wb') as outf, open(
         empty_results_file_name, 'wb') as empty_f:
         pool = multiprocessing.Pool(multiprocessing.cpu_count() * mul_of_processors)
