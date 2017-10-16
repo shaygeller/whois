@@ -1,9 +1,9 @@
 import socket
 from random import randint
+from urlparse import urlsplit
 
 import googlemaps
 import time
-
 import re
 
 
@@ -73,6 +73,7 @@ def perform_whois(server, query,requests_counter):
     :return: response from the whois server or "Finish loop of requests without response" which indicates a loop that
      ended without a good response
     """
+    # TODO: change this error to send json file with status and message
     s = None
     msg = ""
     retries_num = 3
@@ -82,7 +83,9 @@ def perform_whois(server, query,requests_counter):
         return msg
     try:
         # socket connection
+        print "Send request in " + server + " server"
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # TODO: annd to conf, and check if its miliseconds or seconds
         s.settimeout(30)
         # s.getaddrinfo('127.0.0.1', 80)
         s.bind(('', 0))
@@ -95,6 +98,7 @@ def perform_whois(server, query,requests_counter):
 
         # receive reply
         # return s.recv()
+        # TODO: add to configuration file
         while len(msg) < 10000:
             chunk = s.recv(100)
             if chunk == '':
@@ -103,7 +107,7 @@ def perform_whois(server, query,requests_counter):
         s.close()
         return msg
     except Exception as e:
-        # TODO: get all the tld with errors and fix them, 
+        # TODO: send it as json response
         # TODO: get all the tld with errors and fix them,
         # TODO: create a test suit for thies problems
         print "Error: some socket problem, need to rerun the whois lookup, problem url is: " + query + " whois server is " + server
@@ -130,12 +134,13 @@ def get_whois_data(domain, whois_servers):
     # get the extension , .com , .org , .edu
     if "." in domain:
         tld = get_tld(domain)
-        print "Domin is: " + domain + ",    Tld is " + tld
+        print "Domain is: " + domain + ",    Tld is " + tld
         # if "." not in tld: #means TLD like com,net,org
         if tld in whois_servers:
             whois = whois_servers[tld]
         else:
             whois = 'whois.internic.net'
+        # TODO: add the none supported tlds( like tr) to the configuration file
         if "tr" is tld: # .tr tld doesnt work with whois requests TODO: check why tr tld not working with whois requests
             return "";
 
@@ -162,108 +167,6 @@ def get_tld(url):
 # print cou
 #
 
-def parse_whois_response_default(response, url_origin, logging, self, do_parse_writing, output_file_name):
-    # Start the scrapper
-    start = "<pre"
-    end = "</pre>"
-    whois_answer = {}
-    # get only the url, without the https://www.whois.com/whois/ prefix
-    url_for_whois_requests = url_origin
-
-    # Do scraping if whois data exists, means the </pre> tag exists in the HTML
-    if "</pre" in response:
-        logging.debug('Pre exists')
-        data = response[response.index(start) + len(start): response.index(end)]
-        # Create key value pairs from the RAW WHOIS DATA part from the response
-        for line in data.splitlines():
-            line = line.split(":")
-            line[0] = line[0].strip()
-            line[0] = check_rename_line_start(line[0])
-            if not line:  # empty line?
-                continue
-            if line[0] in whois_answer:
-                whois_answer[line[0].strip()] = whois_answer[line[0]] + "," + ''.join(line[1:]).strip()
-            else:
-                whois_answer[line[0].strip()] = ' '.join(line[1:]).strip()
-    save_ans(url_for_whois_requests, whois_answer, logging, self, do_parse_writing, output_file_name)
-
-
-def parse_whois_response_default2(response, url_origin, logging, self, do_parse_writing, output_file_name):
-    # Start the scrapper
-    start = "<div class=\"raw well well-sm\">"
-    end = "<div class=\"col-md-4 col-sm-4\">"
-    whois_answer = {}
-    # get only the url, without the https://www.whois.com/whois/ prefix
-    url_for_whois_requests = url_origin
-
-    # Do scraping if whois data exists, means the </pre> tag exists in the HTML
-    if start in response:
-        logging.debug('Pre exists')
-        data = response[response.index(start) + len(start): response.index(end)]
-        # Create key value pairs from the RAW WHOIS DATA part from the response
-        for line in data.splitlines():
-            line = line.split(":")
-            line[0] = line[0].strip()
-            line[0] = check_rename_line_start(line[0])
-            if not line:  # empty line?
-                continue
-            if line[0] in whois_answer:
-                whois_answer[line[0].strip()] = whois_answer[line[0]] + "," + ''.join(line[1:]).strip()
-            else:
-                whois_answer[line[0].strip()] = ' '.join(line[1:]).strip()
-    save_ans(url_for_whois_requests, whois_answer, logging, self, do_parse_writing, output_file_name)
-
-
-def save_ans(url_for_whois_requests, whois_answer, logging, self, do_parse_writing, output_file_name):
-    """
-        Save the answere to Json file
-        Create Json object like this:
-            [
-              {"string":"string1","int":1,"array":[1,2,3],"dict": {"key": "value1"}},
-              {"string":"string2","int":2,"array":[2,4,6],"dict": {"key": "value2"}},
-              {"string":"string3","int":3,"array":[3,6,9],"dict": {"key": "value3", "extra_key": "extra_value3"}}
-            ]
-
-    """
-    url_to_whois = {}
-    url_to_whois[url_for_whois_requests] = whois_answer
-
-    # start the writing process
-    logging.debug('Waiting for a lock')
-    with self.lock2:
-        try:
-            logging.debug('Acquired a lock')
-            logging.debug(
-                '###################################### WRITING ' + url_for_whois_requests + " data to file ######################################")
-            do_parse_writing(output_file_name, url_to_whois)
-        finally:
-            logging.debug('Released a lock')
-
-
-def save_ans_single_thread(url_for_whois_requests, whois_answer, logging, do_parse_writing, output_file_name):
-    """
-        Save the answere to Json file
-        Create Json object like this:
-            [
-              {"string":"string1","int":1,"array":[1,2,3],"dict": {"key": "value1"}},
-              {"string":"string2","int":2,"array":[2,4,6],"dict": {"key": "value2"}},
-              {"string":"string3","int":3,"array":[3,6,9],"dict": {"key": "value3", "extra_key": "extra_value3"}}
-            ]
-
-    """
-    url_to_whois = {}
-    url_to_whois[url_for_whois_requests] = whois_answer
-
-    # start the writing process
-    logging.debug('Waiting for a lock')
-    try:
-        logging.debug('Acquired a lock')
-        logging.debug(
-            '###################################### WRITING ' + url_for_whois_requests + " data to file ######################################")
-        do_parse_writing(output_file_name, url_to_whois)
-    finally:
-        logging.debug('Released a lock')
-
 
 def check_rename_line_start(line_start):
     if "Host Name" in line_start:
@@ -276,34 +179,3 @@ def check_rename_line_start(line_start):
         return "Update Date"
     else:
         return line_start
-
-
-def parse_whois_response_kr(response, url_origin, logging, self, do_parse_writing, output_file_name):
-    start = "# ENGLISH<br>"
-    end = "- KISA/KRNIC WHOIS Service -"
-    whois_answer = {}
-    # get only the url, without the https://www.whois.com/whois/ prefix
-    url_for_whois_requests = url_origin
-    data = response[response.index(start) + len(start): response.index(end)].strip()
-    data = data.replace("<br>", "").strip()
-    # Do scraping if whois data exists, means the </pre> tag exists in the HTML
-    # logging.debug(str(response))
-    if "The requested Host was not found" not in data:
-        logging.debug('whois data exists')
-        # TODO: Fix this data variable
-        # Create key value pairs from the RAW WHOIS DATA part from the response
-        for line in data.splitlines():
-            line = line.split(":")
-            line[0] = line[0].strip()
-            line[0] = check_rename_line_start(line[0])
-            if not line or len(line) == 1:  # empty line?
-                continue
-            if line[0] in whois_answer:
-                whois_answer[line[0]] = whois_answer[line[0]] + "," + ''.join(line[1:]).strip()
-            elif "Registrant Address" in line[0]:
-                city, country = get_city_country_using_googlemapsapi(line[1:])
-                whois_answer["Registrant City"] = city
-                whois_answer["Registrant Country"] = country
-            else:
-                whois_answer[line[0]] = ' '.join(line[1:]).strip()
-    save_ans(url_for_whois_requests, whois_answer, logging, self, do_parse_writing, output_file_name)

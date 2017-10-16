@@ -1,6 +1,7 @@
 import json
 import logging
 import multiprocessing
+import os
 import time
 from utils import *
 
@@ -8,28 +9,11 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s', )
 
 # Global variables
-# whois_servers_file_name = "data\whois servers list.txt"
-whois_servers_file_name = "data/whois_servers_list.txt"
+whois_servers_file_name = os.path.join("data","whois servers list.txt")
 whois_servers = get_whois_server_list(whois_servers_file_name)
-
-# tld_parse_functions = {".kr": parse_whois_response_kr,
-#                        "default2": parse_whois_response_default2,
-#                        "default": parse_whois_response_default}
+# print whois_servers
 whois_standard_dict = ["Domain Name", "Registrant Name", "Registrant City", "Registrant Country", "Name Server",
                        "Updated Date"]
-
-
-def do_parse_writing(output_file_name, url_to_whois):
-    with open(output_file_name, 'a') as outf:
-        json.dump(url_to_whois, outf)
-        outf.write('\n')
-
-
-def do_parse2_writing(output_file_name, url_to_whois):
-    with open(output_file_name, 'a') as outf:
-        json.dump(url_to_whois, outf)
-        outf.write(",")
-        outf.write('\n')
 
 def do_parse(line):
     """
@@ -41,7 +25,7 @@ def do_parse(line):
     :return: void
     """
     start_time_do_parse = time.time()
-
+    # TODO: create Clean url function to be used everywhere
     url_origin = line.strip()
     if url_origin.endswith("."):
         url_origin = url_origin[:-1]
@@ -62,6 +46,7 @@ def do_parse(line):
         line = line.split(":")
         line[0] = line[0].strip()
         line[0] = check_rename_line_start(line[0])
+        # TODO: Think of better way to represent the concatination
         if line[0] in whois_answer:
             whois_answer[line[0]] = whois_answer[line[0]] + "," + ''.join(line[1:]).strip()
         elif "Registrant Address" in line[0]:
@@ -69,6 +54,7 @@ def do_parse(line):
             city, country = get_city_country_using_googlemapsapi(line[1:])
             if "Registrant City" not in whois_answer.keys():
                 whois_answer["Registrant City"] = city
+            if "Registrant Country" not in whois_answer.keys():
                 whois_answer["Registrant Country"] = country
         # elif len(whois_answer.keys()) == 0 and "TERMS OF USE" in line[0]:
         #     #means no whois data in the response from the whois server
@@ -76,9 +62,9 @@ def do_parse(line):
         else:
             whois_answer[line[0]] = ' '.join(line[1:]).strip()
 
-    # save_ans_single_thread(url_origin, whois_answer, logging, do_parse_writing, output_file_name)
     print "Url " + url_origin + " parsing time: ", time.time() - start_time_do_parse, "to run"
     return url_origin, whois_answer
+
 
 if __name__ == '__main__':
     """
@@ -92,26 +78,17 @@ if __name__ == '__main__':
     :param mul_of_processors: number to multiply the number of cores in the CPU
     :return: void
     """
+    # TODO: Add all vatriabels to configuration file  (ConfigParser class)
     multiprocessing.freeze_support()
     chunk_size = 2
     mul_of_processors = 2
     # TODO: wrap the do_parse func to insert the retries_num as a parameter in that function
     retries_num = 3
     start_time = time.time()
-    # input_file_name = "data\\" + "1k_urls.txt"
-    input_file_name = "data/" + "1k_urls.txt"
-    # output_file_name = "results\\" + time.strftime(
-    #     "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
-    #     mul_of_processors) + '_plain_urls_ans.txt'
-    output_file_name = "results/" + time.strftime(
-        "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
-        mul_of_processors) + '_plain_urls_ans.txt'
-    # empty_results_file_name = "results\\" + time.strftime(
-    #     "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
-    #     mul_of_processors) + "_empty_results.txt"
-    empty_results_file_name = "results/" + time.strftime(
-        "%Y_%m_%d") + "_chunksize_" + str(chunk_size) + "_mul_processors_" + str(
-        mul_of_processors) + "_empty_results.txt"
+    input_file_name = os.path.join("data","1k_urls.txt")
+    output_file_name = os.path.join("results",time.strftime("%Y_%m_%d") + "_urls_ans.txt")
+    empty_results_file_name = os.path.join("results",time.strftime("%Y_%m_%d") + "_error_urls_ans.txt")
+
 
     with open(input_file_name, 'r') as inf, open(output_file_name, 'wb') as outf, open(
         empty_results_file_name, 'wb') as empty_f:
@@ -119,7 +96,7 @@ if __name__ == '__main__':
         for result in pool.imap(do_parse, inf, chunk_size):
             try:
                 # print "writing " + result[0] + ", the data is\n" +result[1]
-                url_to_whois = {result[0]: str(result[1])}
+                url_to_whois = {result[0]: result[1]}
                 if "error_loop" in result[1].keys():  # empty dict is false
                     # Save empty result in a seperate file
                     print "Socket loop returned empty result in " + str(result[0])
@@ -141,3 +118,9 @@ if __name__ == '__main__':
         #     url_to_whois = {result[0]: result[1]}
         #     json.dump(url_to_whois, outf)
         #     outf.write('\n')
+
+
+# TODO: Change the empty results name
+# TODO: instead print do log4j
+# TODO: Change names to os.path....
+# TODO: Split the code into logic and presentation folders
