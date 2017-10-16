@@ -86,7 +86,7 @@ if __name__ == '__main__':
     retries_num = 3
     start_time = time.time()
     # input_file_name = os.path.join("data","1k_urls.txt")
-    input_file_name = os.path.join("data","small_data.txt")
+    input_file_name = os.path.join("data","1k_urls.txt")
     output_file_name = os.path.join("results",time.strftime("%Y_%m_%d") + "_urls_ans.txt")
     empty_results_file_name = os.path.join("results",time.strftime("%Y_%m_%d") + "_error_urls_ans.txt")
 
