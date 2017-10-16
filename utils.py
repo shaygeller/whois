@@ -124,6 +124,8 @@ def perform_whois(server, query,requests_counter):
 def perform_cmd_whois(domain):
     bashCommand = "whois " + domain
     output = subprocess.check_output(['bash', '-c', bashCommand])
+    print "Whois from cmd..."
+    print output
     return output
 
 
@@ -142,8 +144,12 @@ def get_whois_data(domain, whois_servers):
     if "." in domain:
         tld = get_tld(domain)
         print "Domain is: " + domain + ",    Tld is " + tld
+        print type(tld)
+        print tld + " " + str(len(tld))
         # if "." not in tld: #means TLD like com,net,org
-        if not tld is "de":
+        if tld == "de":
+            msg = perform_cmd_whois(domain)
+        else:
             if tld in whois_servers:
                 whois = whois_servers[tld]
             else:
@@ -152,8 +158,7 @@ def get_whois_data(domain, whois_servers):
             if "tr" is tld: # .tr tld doesnt work with whois requests TODO: check why tr tld not working with whois requests
                 return "";
             msg = perform_whois(whois, domain,0)
-        else:
-            msg = perform_cmd_whois(domain)
+
     else:  # no TLD in the url, not a valid url
         msg = ""  # Return the reply
     return msg
