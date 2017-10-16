@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s', )
 
 # Global variables
-whois_servers_file_name = os.path.join("data","whois servers list.txt")
+whois_servers_file_name = os.path.join("data","whois_servers_list.txt")
 whois_servers = get_whois_server_list(whois_servers_file_name)
 # print whois_servers
 whois_standard_dict = ["Domain Name", "Registrant Name", "Registrant City", "Registrant Country", "Name Server",
