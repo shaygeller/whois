@@ -1,6 +1,6 @@
-import subprocess
-# print subprocess.Popen("whois biohaus-stiftung.de")
-
 bashCommand = "whois biohaus-stiftung.de"
-output = subprocess.check_output(['bash','-c', bashCommand])
+import subprocess
+process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+output, error = process.communicate()
 print output
+print error
