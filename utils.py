@@ -1,4 +1,5 @@
 import socket
+import subprocess
 from random import randint
 from urlparse import urlsplit
 
@@ -120,6 +121,12 @@ def perform_whois(server, query,requests_counter):
 
 
 # Function to perform the whois on a domain name
+def perform_cmd_whois(domain):
+    bashCommand = "whois " + domain
+    output = subprocess.check_output(['bash', '-c', bashCommand])
+    return output
+
+
 def get_whois_data(domain, whois_servers):
     """
         Function to perform the whois on a domain name
@@ -136,15 +143,17 @@ def get_whois_data(domain, whois_servers):
         tld = get_tld(domain)
         print "Domain is: " + domain + ",    Tld is " + tld
         # if "." not in tld: #means TLD like com,net,org
-        if tld in whois_servers:
-            whois = whois_servers[tld]
+        if not tld is "de":
+            if tld in whois_servers:
+                whois = whois_servers[tld]
+            else:
+                whois = 'whois.internic.net'
+            # TODO: add the none supported tlds( like tr) to the configuration file
+            if "tr" is tld: # .tr tld doesnt work with whois requests TODO: check why tr tld not working with whois requests
+                return "";
+            msg = perform_whois(whois, domain,0)
         else:
-            whois = 'whois.internic.net'
-        # TODO: add the none supported tlds( like tr) to the configuration file
-        if "tr" is tld: # .tr tld doesnt work with whois requests TODO: check why tr tld not working with whois requests
-            return "";
-
-        msg = perform_whois(whois, domain,0)
+            msg = perform_cmd_whois(domain)
     else:  # no TLD in the url, not a valid url
         msg = ""  # Return the reply
     return msg
